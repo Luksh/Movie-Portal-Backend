@@ -1,5 +1,6 @@
 import express from "express";
 import connectDB from "./connect.db.js";
+import userRoutes from "./src/User/user.routes.js";
 
 const app = express();
 
@@ -8,8 +9,9 @@ app.use(express.json());
 
 connectDB();
 
-const PORT = 8001;
-// const PORT = process.env.API_PORT;
+app.use(userRoutes);
+
+const PORT = process.env.API_PORT;
 
 // Network PORT and server
 app.listen(PORT, () => {
