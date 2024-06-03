@@ -1,7 +1,9 @@
 import express from "express";
 import User from "./user.model.js";
 import validateReqBody from "../Middleware/validate.req.body.middleware.js";
-import { registerUserValidation } from "./user.validation.js";
+import { loginUserValidation, registerUserValidation } from "./user.validation.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
@@ -30,6 +32,30 @@ router.post("/user/register", validateReqBody(registerUserValidation), async (re
   await User.create(newUser);
 
   return res.status(201).send({ message: "User registered successfully." });
+});
+
+router.post("/user/login", validateReqBody(loginUserValidation), async (req, res, next) => {
+  const loginCredentials = req.body;
+  const user = await User.findOne({ email: loginCredentials.email });
+
+  if (!user) {
+    return res.status(404).send({ message: "Invalid Credentials." });
+  }
+
+  const plainPassword = loginCredentials.password;
+  const hashedPassword = user.password;
+  const isPasswordValid = await bcrypt.compare(plainPassword, hashedPassword);
+
+  if (!isPasswordValid) {
+    return res.status(404).send({ message: "Invalid Credentials." });
+  }
+
+  const payLoad = { email: user.email };
+  const token = jwt.sign(payLoad, process.env.ACCESS_TOKEN_SECRET);
+
+  user.password = undefined;
+
+  return res.status(200).send({ message: "User logged in successfully.", userDetails: user, token });
 });
 
 export default router;
